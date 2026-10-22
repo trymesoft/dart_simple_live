@@ -72,6 +72,7 @@
   9. 仅 tag 构建：`gh release create` 附带 APK 与 SHA256SUMS，Release 名 `android-<version>`
 - **版本推导**：tag `android-v1.11.4` → versionName `1.11.4`；versionCode 取 pubspec 的 `+11104`。dispatch 时 versionName/versionCode 都取 pubspec，且不建 Release。
 - **产物**：`app-arm64-v8a-release.apk`（主）、`app-armeabi-v7a-release.apk`、`app-x86_64-release.apk` 三个 split 包；不额外做 universal 包（需要时再加）。
+- **Release 命名**：tag 使用 `android-v<version>`；Release 标题为 `Android <version>`（实现与文档以此为准）。
 - **签名材料**：本地 `keytool` 生成 `simple-live-release.jks`（RSA 2048，有效期 10000 天，随机强密码），放在仓库外 `~/keys/`，keystore 与密码明文备份说明一并留下；4 个 secrets 用 gh 写入 fork：
   `KEYSTORE_BASE64` / `STORE_PASSWORD` / `KEY_PASSWORD` / `KEY_ALIAS`。
 - **不改**：app 代码、gradle 配置、pubspec、上游 workflow。
@@ -94,3 +95,19 @@
 
 - dispatch 构建的产物只保留 Actions artifact（90 天），不创建 Release。用户确认：过期时通常上游代码已更新，重新打包即可接受；需要永久保留时打 tag 走 Release。
 
+
+## 实施期间的决定（2026-10-22）
+
+1. **固定依赖版本**（原设计"不改 pubspec"被此决定取代）：
+   - `auto_orientation_v2: 2.4.6`（2.4.7 起在 `android/build.gradle` 新增 `kotlin {}` 但未 apply Kotlin 插件）
+   - `dynamic_color: 1.8.1`（1.9.0 在 `android/build.gradle.kts` 中 `kotlin {}` 未解析）
+   - `qr_code_scanner_plus: 2.1.2`（2.2.0 起同类缺陷）
+   - `volume_controller: 3.5.0`（3.6.0 起同类缺陷）
+   原因：这些版本在 Gradle 配置阶段报 "Could not find method kotlin()" / "Unresolved reference: kotlin"，与签名和 workflow 无关。固定到最后一个可用版本（与上游 2026-08 绿色构建一致）是代价最小的修复。
+2. **跟踪 `simple_live_app/pubspec.lock`**：原 `.gitignore` 忽略该文件，导致 CI 每次重新解析约 200 个包，pub.dev 上的新发布会直接让"同一份代码今天能打包、明天不能"。改为纳入版本管理，从首次绿色 CI 构建下载后提交，避免同类漂移；不使用 `--enforce-lockfile`，这样上游更新 pubspec 时 CI 仍可自动更新 lock 而不硬失败。
+3. **Workflow 细节调整**（静态 review 发现）：
+   - `upload-artifact` 加 `overwrite: true`，避免同一次 run 重跑时因 artifact 已存在而失败；
+   - Release 步骤限定 `github.event_name == 'push'` 且 tag 匹配 `android-v<数字>`；
+   - 版本名非空、build number 必须为数字，解析失败直接 fail；
+   - 版本值通过 `env:` 传入 shell，避免 tag 内容直接拼进脚本；
+   - Actions 升级：`checkout@v7`、`setup-java@v6`、`upload-artifact@v7`。

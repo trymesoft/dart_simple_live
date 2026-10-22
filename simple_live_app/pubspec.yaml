@@ -20,7 +20,7 @@ dependencies:
   logger: ^2.6.2 #日志
   intl: ^0.20.2 #国际化
   qr_flutter: ^4.1.0 #二维码生成
-  dynamic_color: ^1.8.1 #动态颜色
+  dynamic_color: 1.8.1 #动态颜色（1.9.0 的 android/build.gradle.kts 缺 kotlin 插件导致 Gradle 配置失败）
   path: any
   collection: any
   udp: ^5.0.3 #UDP
@@ -59,8 +59,8 @@ dependencies:
   floating: ^6.0.0 #PIP画中画
   flutter_inappwebview: ^6.1.5 #WebView
   connectivity_plus: ^7.0.0 #网络状态
-  qr_code_scanner_plus: ^2.0.14 #二维码扫描
-  volume_controller: ^3.4.0 #音量控制
+  qr_code_scanner_plus: 2.1.2 #二维码扫描（2.2.0+ 的 android/build.gradle 缺 kotlin 插件导致 Gradle 配置失败）
+  volume_controller: 3.5.0 #音量控制（3.6.0+ 的 android/build.gradle 缺 kotlin 插件导致 Gradle 配置失败）
 
   # 网络相关
   shelf: ^1.4.2

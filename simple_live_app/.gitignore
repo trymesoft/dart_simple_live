@@ -46,7 +46,7 @@ app.*.map.json
 /android/app/release
 
 /ios/Podfile.lock
-pubspec.lock
+# pubspec.lock 被跟踪：CI 需要确定性的依赖解析（见 docs/superpowers/specs/2026-10-22-android-ci-design.md）
 
 .fvm/
 

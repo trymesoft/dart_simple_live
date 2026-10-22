@@ -332,3 +332,13 @@ Expected: 无未提交改动；最近提交为 workflow + docs。
 - [ ] **Step 3: 汇报**
 
 汇报内容：run 链接、Release 链接、签名指纹比对结果、APK 文件清单与大小、后续用法（推 tag 出永久包 / dispatch 出临时包 / 手机上首次安装需卸载官方版）、keystore 备份位置警告。
+
+---
+
+## 实施期间的变更（记录）
+
+- Global Constraints 中"不改 `pubspec.yaml`"被取代：为让 Gradle 配置通过，固定了 4 个 Android 插件的版本（见 spec 的实施期间决定第 1 条）；这是必要修复，不是设计变更。
+- `simple_live_app/pubspec.lock` 从 `.gitignore` 中移除并纳入版本管理（spec 决定第 2 条）；workflow 的 artifact 会附带该文件，便于后续重新锁定。
+- Workflow 按静态 review 调整：`overwrite: true`、Release 仅 push 事件触发、版本解析校验、版本值改由 `env:` 传入、Actions 大版本升级（spec 决定第 3 条）。
+- 步骤顺序与 plan Task 2 的偏差：实现把 `Resolve version` 放在 `Flutter pub get` 之前（无依赖关系，无影响）。
+- 第一次 dispatch（run 39813182152）失败于 `auto_orientation_v2 2.4.7`；第二次（run 39814016311）失败于 `dynamic_color 1.9.0`；均已在上述固定版本中修复，第三次运行待验证。
