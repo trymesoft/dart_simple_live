@@ -341,4 +341,6 @@ Expected: 无未提交改动；最近提交为 workflow + docs。
 - `simple_live_app/pubspec.lock` 从 `.gitignore` 中移除并纳入版本管理（spec 决定第 2 条）；workflow 的 artifact 会附带该文件，便于后续重新锁定。
 - Workflow 按静态 review 调整：`overwrite: true`、Release 仅 push 事件触发、版本解析校验、版本值改由 `env:` 传入、Actions 大版本升级（spec 决定第 3 条）。
 - 步骤顺序与 plan Task 2 的偏差：实现把 `Resolve version` 放在 `Flutter pub get` 之前（无依赖关系，无影响）。
-- 第一次 dispatch（run 39813182152）失败于 `auto_orientation_v2 2.4.7`；第二次（run 39814016311）失败于 `dynamic_color 1.9.0`；均已在上述固定版本中修复，第三次运行待验证。
+- 第一次 dispatch（run 39813182152）失败于 `auto_orientation_v2 2.4.7`；第二次（run 39814016311）失败于 `dynamic_color 1.9.0`；第三次（run 39817252139）失败于 `auto_orientation_v2 2.4.6` 的 Kotlin 源码未被编译；第四次（run 39822039952）失败于 NDK zip 下载损坏；第五次（run 39822799715）是 NDK 预装脚本在 pipefail 下误报失败；第六次（run 39823454201）失败于 `auto_orientation_v2 2.4.0` 的 JVM target 不一致。
+- 最终固定 `auto_orientation_v2: 2.3.8`（纯 Java 实现）后，第七次 dispatch（run 39824669920）**绿**：3 个 APK、SHA256 校验通过、APK 证书指纹与本地 keystore 一致（`3F:B3:8C:...:DA:27`）。
+- 新增"预装 NDK（重试）"步骤；`simple_live_app/pubspec.lock` 已按 CI 真实解析结果提交。

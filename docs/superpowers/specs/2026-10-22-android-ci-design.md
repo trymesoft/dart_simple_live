@@ -99,12 +99,14 @@
 ## 实施期间的决定（2026-10-22）
 
 1. **固定依赖版本**（原设计"不改 pubspec"被此决定取代）：
-   - `auto_orientation_v2: 2.4.6`（2.4.7 起在 `android/build.gradle` 新增 `kotlin {}` 但未 apply Kotlin 插件）
+   - `auto_orientation_v2: 2.3.8`（2.4.1~2.4.6 带 Kotlin 源码但未 apply Kotlin 插件，类不会被编译；2.4.0 的 Java/Kotlin JVM target 不一致（1.8 vs 17）编译失败；2.4.7 的 `kotlin {}` 未解析；2.3.8 是纯 Java 实现，是最后一个可靠版本）
    - `dynamic_color: 1.8.1`（1.9.0 在 `android/build.gradle.kts` 中 `kotlin {}` 未解析）
    - `qr_code_scanner_plus: 2.1.2`（2.2.0 起同类缺陷）
    - `volume_controller: 3.5.0`（3.6.0 起同类缺陷）
    原因：这些版本在 Gradle 配置阶段报 "Could not find method kotlin()" / "Unresolved reference: kotlin"，与签名和 workflow 无关。固定到最后一个可用版本（与上游 2026-08 绿色构建一致）是代价最小的修复。
-2. **跟踪 `simple_live_app/pubspec.lock`**：原 `.gitignore` 忽略该文件，导致 CI 每次重新解析约 200 个包，pub.dev 上的新发布会直接让"同一份代码今天能打包、明天不能"。改为纳入版本管理，从首次绿色 CI 构建下载后提交，避免同类漂移；不使用 `--enforce-lockfile`，这样上游更新 pubspec 时 CI 仍可自动更新 lock 而不硬失败。
+2. **跟踪 `simple_live_app/pubspec.lock`**：原 `.gitignore` 忽略该文件，导致 CI 每次重新解析约 200 个包，pub.dev 上的新发布会直接让"同一份代码今天能打包、明天不能"。改为纳入版本管理，内容取自首次绿色 CI 构建（run 39824669920）真实解析结果，已确认锁定 auto_orientation_v2 2.3.8 / dynamic_color 1.8.1 / qr_code_scanner_plus 2.1.2 / volume_controller 3.5.0 / url_launcher_android 6.3.30；不使用 `--enforce-lockfile`，这样上游更新 pubspec 时 CI 仍可自动更新 lock 而不硬失败。
+4. **预装 NDK**：Gradle 自动安装 NDK 时出现过 zip 下载损坏（`Error on ZipFile unknown archive`），改为用 sdkmanager 预装 Flutter 期望的 NDK 版本（从 Flutter SDK 的 `FlutterExtension.kt` 读取），失败时清理半成品并重试 4 次；找不到 sdkmanager 时回退给 Gradle。注意 `yes | sdkmanager` 在 `pipefail` 下会因 SIGPIPE 误报失败，已用 `{ yes 2>/dev/null || true; }` 修正。
+
 3. **Workflow 细节调整**（静态 review 发现）：
    - `upload-artifact` 加 `overwrite: true`，避免同一次 run 重跑时因 artifact 已存在而失败；
    - Release 步骤限定 `github.event_name == 'push'` 且 tag 匹配 `android-v<数字>`；
