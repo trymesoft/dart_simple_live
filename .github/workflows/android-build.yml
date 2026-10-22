@@ -101,6 +101,35 @@ jobs:
         working-directory: simple_live_app
         run: flutter pub get
 
+      - name: Preinstall Android NDK (retry-safe)
+        run: |
+          set -euo pipefail
+          EXT="$FLUTTER_ROOT/packages/flutter_tools/gradle/src/main/kotlin/FlutterExtension.kt"
+          NDK_VERSION="$(grep -oE 'ndkVersion: String = "[0-9.]+"' "$EXT" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
+          if [ -z "$NDK_VERSION" ]; then
+            echo "::error::Cannot determine Flutter's default NDK version from $EXT"
+            exit 1
+          fi
+          SDK_ROOT="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -maxdepth 3 -name sdkmanager -type f 2>/dev/null | head -1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::warning::sdkmanager not found under $SDK_ROOT; letting Gradle install the NDK"
+            exit 0
+          fi
+          echo "Preinstalling Android NDK $NDK_VERSION"
+          for attempt in 1 2 3 4; do
+            if yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "ndk;$NDK_VERSION" > /tmp/ndk-install.log 2>&1; then
+              echo "NDK $NDK_VERSION installed on attempt $attempt"
+              exit 0
+            fi
+            echo "::warning::NDK install attempt $attempt failed; cleaning partial download and retrying"
+            tail -5 /tmp/ndk-install.log || true
+            rm -rf "$SDK_ROOT/.temp" "$SDK_ROOT/ndk/$NDK_VERSION"
+            sleep 5
+          done
+          echo "::error::Could not install Android NDK $NDK_VERSION after 4 attempts"
+          exit 1
+
       - name: Build release APKs
         working-directory: simple_live_app
         env:
