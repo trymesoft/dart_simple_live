@@ -118,12 +118,12 @@ jobs:
           fi
           echo "Preinstalling Android NDK $NDK_VERSION"
           for attempt in 1 2 3 4; do
-            if yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "ndk;$NDK_VERSION" > /tmp/ndk-install.log 2>&1; then
+            if { yes 2>/dev/null || true; } | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "ndk;$NDK_VERSION" > /tmp/ndk-install.log 2>&1; then
               echo "NDK $NDK_VERSION installed on attempt $attempt"
               exit 0
             fi
             echo "::warning::NDK install attempt $attempt failed; cleaning partial download and retrying"
-            tail -5 /tmp/ndk-install.log || true
+            tail -20 /tmp/ndk-install.log || true
             rm -rf "$SDK_ROOT/.temp" "$SDK_ROOT/ndk/$NDK_VERSION"
             sleep 5
           done
